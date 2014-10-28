@@ -31,11 +31,10 @@ public class HistoryActivity extends Activity {
         getActionBar().setDisplayHomeAsUpEnabled(true);
         initWidgets();
 
+        //запрос бд и заполнение
         dbHelper = new DBHelper(this, null);
         tripArrayList = readDataFromDB();
         fillList(tripArrayList);
-
-        //TODO запрос бд и заполнение
     }
 
     private void fillList(ArrayList<Trip> list) {

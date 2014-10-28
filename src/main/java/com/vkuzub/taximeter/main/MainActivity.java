@@ -1,18 +1,19 @@
 package com.vkuzub.taximeter.main;
 
 import android.app.Activity;
-import android.content.ContentValues;
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.*;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import com.vkuzub.taximeter.R;
 import com.vkuzub.taximeter.database.DBHelper;
+import com.vkuzub.taximeter.service.CounterService;
 import com.vkuzub.taximeter.utils.TaximeterUtils;
 
 import java.text.DateFormat;
@@ -28,11 +29,17 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     private DBHelper dbHelper;
 
+    private CounterService counterService;
+    private boolean isServiceBound;
+
+    private boolean isProcessActive;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initWidgets();
+        initCounterService();
 
         dbHelper = new DBHelper(this, null);
     }
@@ -41,6 +48,14 @@ public class MainActivity extends Activity implements View.OnClickListener {
     protected void onStart() {
         super.onStart();
         readPreferences();
+
+        Intent intent = new Intent(this, CounterService.class);
+        bindService(intent, connection, Context.BIND_AUTO_CREATE);
+
+    }
+
+    private void initCounterService() {
+
     }
 
     private void initWidgets() {
@@ -89,8 +104,27 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     @Override
     protected void onDestroy() {
-        dbHelper.close();
+
+
         super.onDestroy();
+        dbHelper.close();
+
+        if (isServiceBound) {
+            unbindService(connection);
+            isServiceBound = false;
+        }
+
+
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        if (isProcessActive) {
+            Toast.makeText(getApplicationContext(), "Остановите процесс подсчета, для выхода", Toast.LENGTH_SHORT).show();
+        } else {
+            super.onBackPressed();
+        }
     }
 
     @Override
@@ -99,11 +133,23 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         switch (v.getId()) {
             case R.id.btnStart:
-                //TODO start service;
+                if (!isProcessActive) {
+                    //TODO start service;
+                    counterService.startCounter();
+                    isProcessActive = true;
+                    btnStart.setText("Пауза");
+                } else {
+                    //TODO pause
+                    counterService.pauseCounter();
+                    btnStart.setText("Старт");
+                }
 
                 break;
             case R.id.btnStop:
                 //TODO stop service, запись в БД;
+
+                isProcessActive = false;
+                counterService.stopCounter();
                 writeToDB(tvSum.getText().toString(), tvDistance.getText().toString());
                 break;
             case R.id.btnHistory:
@@ -116,5 +162,21 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 break;
         }
     }
+
+
+    private ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            CounterService.LocalBinder binder = (CounterService.LocalBinder) iBinder;
+            counterService = binder.getService();
+            isServiceBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            isServiceBound = false;
+        }
+    };
+
 }
 
