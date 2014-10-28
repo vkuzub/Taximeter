@@ -1,0 +1,7 @@
+target/
+*.iml
+gen-external-apklibs/
+.idea/
+out/
+.navigation
+/classes
