@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference android:key="min_tarif"
+                        android:defaultValue="17"
+                        android:summary="грн"
+                        android:inputType="numberDecimal"
+                        android:title="Минимальный тариф"></EditTextPreference>
+    <EditTextPreference android:key="vhodit"
+                        android:summary="км"
+                        android:defaultValue="5"
+                        android:inputType="numberDecimal"
+                        android:title="Входит"></EditTextPreference>
+    <EditTextPreference android:key="tarif"
+                        android:summary="грн/км"
+                        android:defaultValue="2.20"
+                        android:inputType="numberDecimal"
+                        android:title="Тариф"></EditTextPreference>
+</PreferenceScreen>

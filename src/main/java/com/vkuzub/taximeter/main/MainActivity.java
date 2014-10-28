@@ -1,24 +1,35 @@
-package com.vkuzub.taximeter;
+package com.vkuzub.taximeter.main;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import com.vkuzub.taximeter.R;
+import com.vkuzub.taximeter.utils.TaximeterUtils;
 
 public class MainActivity extends Activity implements View.OnClickListener {
 
     private Button btnStart, btnStop, btnHistory, btnSettings;
     private TextView tvDistance, tvSum;
 
+    private double prefMinTarif, prefTarifEnter, prefTarif;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initWidgets();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        readPreferences();
     }
 
     private void initWidgets() {
@@ -37,6 +48,16 @@ public class MainActivity extends Activity implements View.OnClickListener {
         tvDistance = (TextView) findViewById(R.id.tvDistance);
         tvSum = (TextView) findViewById(R.id.tvSum);
 
+    }
+
+    private void readPreferences() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+
+        prefMinTarif = Float.parseFloat(sp.getString("min_tarif", "17"));
+        prefTarifEnter = Float.parseFloat(sp.getString("vhodit", "5"));
+        prefTarif = Float.parseFloat(sp.getString("tarif", "2.2"));
+
+        Log.d(TaximeterUtils.LOG_TAG, prefMinTarif + " " + prefTarifEnter + " " + prefTarif);
     }
 
     @Override
