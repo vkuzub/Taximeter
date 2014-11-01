@@ -1,5 +1,6 @@
 package com.vkuzub.taximeter.main;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
@@ -20,10 +21,10 @@ public class GpsDisabledDialog extends DialogFragment implements DialogInterface
 
         adb.setTitle("Невозможно определить местоположение");
 
-        adb.setMessage("Включите определение местоположения по координатам сети");
+        adb.setMessage("Включите определение местоположения по спутникам GPS");
 
         adb.setPositiveButton("Настройки", this);
-        adb.setNegativeButton("Назад", this);
+        adb.setNegativeButton("Выход", this);
         setCancelable(false);
         return adb.create();
     }
@@ -38,7 +39,7 @@ public class GpsDisabledDialog extends DialogFragment implements DialogInterface
                 dismiss();
                 break;
             case Dialog.BUTTON_NEGATIVE:
-                dismiss();
+                getActivity().finish();
                 break;
         }
     }

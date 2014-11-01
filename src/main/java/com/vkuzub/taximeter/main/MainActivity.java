@@ -1,14 +1,18 @@
 package com.vkuzub.taximeter.main;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.*;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.vkuzub.taximeter.R;
@@ -17,45 +21,111 @@ import com.vkuzub.taximeter.service.CounterService;
 import com.vkuzub.taximeter.utils.TaximeterUtils;
 
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 
 public class MainActivity extends Activity implements View.OnClickListener {
 
     private Button btnStart, btnStop, btnHistory, btnSettings;
-    private TextView tvDistance, tvSum;
+    private TextView tvDistance, tvPrice, tvGpsStatus;
+    private LinearLayout llGpsStatus;
 
     private double prefMinTarif, prefTarifEnter, prefTarif;
-
-    private DBHelper dbHelper;
+    private double price = 0, distance = 0;
+    private double latlonPrevious[] = new double[2];
 
     private CounterService counterService;
     private boolean isServiceBound;
 
     private boolean isProcessActive;
+    private boolean isGPSActive;
+
+    public static final String PARAM_INTENT = "pendingIntent";
+    public static final String DISTANCE = "distance";
+    public static final String PARAM_STATUS_GPS = "gps_status";
+    public static final int PARAM_CODE_DISTANCE = 333;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         initWidgets();
         initCounterService();
-
-        dbHelper = new DBHelper(this, null);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
         readPreferences();
+    }
 
-        Intent intent = new Intent(this, CounterService.class);
-        bindService(intent, connection, Context.BIND_AUTO_CREATE);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!TaximeterUtils.isGPSLocationAvailable(getApplicationContext())) {
+            GpsDisabledDialog gpsDisabledDialog = new GpsDisabledDialog();
+            gpsDisabledDialog.show(getFragmentManager(), "GpsDisabledDialog");
+            return;
+        }
+        if (isServiceBound == false) {
+            initCounterService();
+        }
+    }
 
+
+    private void updateGPSStatus(String status) {
+        tvGpsStatus.setText(status);
+        llGpsStatus.setBackgroundColor(Color.GREEN);
+    }
+
+    private void updateDistanceSum(String distance, String sum) {
+        tvDistance.setText(distance);
+        tvPrice.setText(sum);
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (resultCode) {
+            case PARAM_CODE_DISTANCE:
+                isGPSActive = data.getBooleanExtra(MainActivity.PARAM_STATUS_GPS, false);
+                if (isGPSActive) {
+                    updateGPSStatus("Спутники найдены");
+                }
+                distance += data.getDoubleExtra(MainActivity.DISTANCE, 0);
+                updateInfo(distance);
+                Log.d(TaximeterUtils.LOG_TAG, isGPSActive + " " + distance);
+                break;
+
+
+        }
+    }
+
+    private void updateInfo(double distance) {
+        price += calculatePrice(distance);
+
+        DecimalFormat df = new DecimalFormat("#.00");
+
+        tvDistance.setText(String.valueOf(df.format(distance / 1000)) + " км");
+        tvPrice.setText(df.format(price) + " uah");
+
+        Log.d(TaximeterUtils.LOG_TAG, distance + " " + price);
+    }
+
+    private double calculatePrice(double distance) {
+        double price = 0;
+
+        return price;
     }
 
     private void initCounterService() {
-
+        PendingIntent pendingIntent = createPendingResult(PARAM_CODE_DISTANCE, new Intent(), 0);
+        Intent intent = new Intent(getApplicationContext(), CounterService.class).putExtra(PARAM_INTENT, pendingIntent);
+        bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
     private void initWidgets() {
@@ -72,8 +142,11 @@ public class MainActivity extends Activity implements View.OnClickListener {
         btnSettings.setOnClickListener(this);
 
         tvDistance = (TextView) findViewById(R.id.tvDistance);
-        tvSum = (TextView) findViewById(R.id.tvSum);
+        tvPrice = (TextView) findViewById(R.id.tvSum);
+        tvGpsStatus = (TextView) findViewById(R.id.tvGPSStatus);
 
+        llGpsStatus = (LinearLayout) findViewById(R.id.llGPSStatus);
+        llGpsStatus.setBackgroundColor(Color.RED);
     }
 
     private void readPreferences() {
@@ -87,6 +160,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private boolean writeToDB(String sum, String distance) {
+        DBHelper dbHelper = new DBHelper(this, null);
+
         ContentValues cv = new ContentValues();
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Calendar cal = Calendar.getInstance();
@@ -99,21 +174,18 @@ public class MainActivity extends Activity implements View.OnClickListener {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.insert(DBHelper.tableName, null, cv);
         db.close();
+        dbHelper.close();
         return true;
     }
 
     @Override
     protected void onDestroy() {
-
-
         super.onDestroy();
-        dbHelper.close();
 
         if (isServiceBound) {
             unbindService(connection);
             isServiceBound = false;
         }
-
 
     }
 
@@ -133,24 +205,30 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         switch (v.getId()) {
             case R.id.btnStart:
-                if (!isProcessActive) {
-                    //TODO start service;
-                    counterService.startCounter();
-                    isProcessActive = true;
-                    btnStart.setText("Пауза");
+                if (isGPSActive) {
+                    if (!isProcessActive) {
+                        //TODO start service;
+                        counterService.startCounter();
+                        isProcessActive = true;
+                        btnStart.setText("Пауза");
+                    } else {
+                        //TODO pause
+                        counterService.pauseCounter();
+                        btnStart.setText("Старт");
+                    }
                 } else {
-                    //TODO pause
-                    counterService.pauseCounter();
-                    btnStart.setText("Старт");
+                    Toast.makeText(getApplicationContext(), "Поиск спутников GPS, ожидайте", Toast.LENGTH_SHORT).show();
                 }
+
 
                 break;
             case R.id.btnStop:
                 //TODO stop service, запись в БД;
 
                 isProcessActive = false;
+                btnStart.setText("Старт");
                 counterService.stopCounter();
-                writeToDB(tvSum.getText().toString(), tvDistance.getText().toString());
+                writeToDB(tvPrice.getText().toString(), tvDistance.getText().toString());
                 break;
             case R.id.btnHistory:
                 intent = new Intent(this, HistoryActivity.class);

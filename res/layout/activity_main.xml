@@ -22,7 +22,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="100 "
                 android:id="@+id/tvSum"
                 android:layout_alignParentTop="true"
                 android:layout_centerHorizontal="true" android:layout_weight="1"/>
@@ -41,7 +40,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceLarge"
-                android:text="20 "
                 android:id="@+id/tvDistance" android:layout_below="@+id/tvSum" android:layout_centerHorizontal="true"
                 android:layout_margin="0dp" android:layout_weight="1"/>
     </LinearLayout>
