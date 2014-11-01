@@ -10,13 +10,14 @@
             android:orientation="horizontal"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentTop="false" android:layout_alignParentRight="false" android:id="@+id/linearLayout4">
+            android:layout_alignParentTop="false" android:layout_alignParentRight="false"
+            android:id="@+id/linearLayout4">
         <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:text="Сумма"
-                 android:layout_weight="1"/>
+                android:layout_weight="1"/>
         <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -29,13 +30,13 @@
     <LinearLayout
             android:orientation="horizontal"
             android:layout_width="fill_parent"
-            android:layout_height="wrap_content"  android:layout_below="@+id/linearLayout4">
+            android:layout_height="wrap_content" android:layout_below="@+id/linearLayout4">
         <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:text="Расстояние"
-                 android:layout_weight="1"/>
+                android:layout_weight="1"/>
         <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -62,11 +63,24 @@
     </LinearLayout>
     <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent"
                   android:layout_height="wrap_content"
-                  android:id="@+id/linearLayout2" android:layout_above="@+id/linearLayout3"
+                  android:id="@+id/linearlayout" android:layout_above="@+id/linearLayout3"
                   android:layout_alignParentLeft="true">
         <Button android:layout_width="0dp" android:layout_height="wrap_content" android:text="Старт"
                 android:id="@+id/btnStart" android:layout_weight="1"/>
         <Button android:layout_width="0dp" android:layout_height="wrap_content" android:text="Стоп"
                 android:id="@+id/btnStop" android:layout_gravity="center_horizontal" android:layout_weight="1"/>
+    </LinearLayout>
+    <LinearLayout android:orientation="horizontal" android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:id="@+id/llGPSStatus" android:layout_above="@+id/linearlayout"
+                  android:layout_centerHorizontal="true">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                  android:textAppearance="?android:attr/textAppearanceMedium" android:text="Статус GPS"
+                  android:layout_weight="1"/>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                  android:textAppearance="?android:attr/textAppearanceLarge" android:text="Не найдено"
+                  android:id="@+id/tvGPSStatus"
+                  android:layout_alignParentTop="true" android:layout_centerHorizontal="true"
+                  android:layout_weight="1"/>
     </LinearLayout>
 </RelativeLayout>
