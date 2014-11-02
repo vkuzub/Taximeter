@@ -97,7 +97,9 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     updateGPSStatus("Спутники найдены");
                 }
                 distance += data.getDoubleExtra(MainActivity.DISTANCE, 0);
-                updateInfo(distance);
+                if (isProcessActive) {
+                    updateInfo(distance);
+                }
                 Log.d(TaximeterUtils.LOG_TAG, isGPSActive + " " + distance);
                 break;
 
@@ -106,21 +108,30 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private void updateInfo(double distance) {
-        price += calculatePrice(distance);
+        price = calculatePrice(distance);
 
-        DecimalFormat df = new DecimalFormat("#.00");
+        DecimalFormat df = new DecimalFormat("0.00");
 
         tvDistance.setText(String.valueOf(df.format(distance / 1000)) + " км");
-        tvPrice.setText(df.format(price) + " uah");
+//        tvPrice.setText(df.format(price) + " uah");
 
-        Log.d(TaximeterUtils.LOG_TAG, distance + " " + price);
+        Log.d(TaximeterUtils.LOG_TAG, (distance / 1000) + " " + price);
+    }
+
+    private void clearInfo() {
+        tvDistance.setText("0");
+        tvPrice.setText("0");
     }
 
     private double calculatePrice(double distance) {
-        double price = 0;
-
+        if (distance < 5 * 1000) {
+            return prefMinTarif;
+        } else {
+            price = prefTarif * (distance / 1000) + prefTarifEnter;
+        }
         return price;
     }
+
 
     private void initCounterService() {
         PendingIntent pendingIntent = createPendingResult(PARAM_CODE_DISTANCE, new Intent(), 0);
@@ -211,10 +222,16 @@ public class MainActivity extends Activity implements View.OnClickListener {
                         counterService.startCounter();
                         isProcessActive = true;
                         btnStart.setText("Пауза");
+
+                        distance = 0;
+                        price = 0;
+                        clearInfo();
                     } else {
                         //TODO pause
                         counterService.pauseCounter();
                         btnStart.setText("Старт");
+                        isProcessActive = false;
+
                     }
                 } else {
                     Toast.makeText(getApplicationContext(), "Поиск спутников GPS, ожидайте", Toast.LENGTH_SHORT).show();
@@ -229,18 +246,45 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 btnStart.setText("Старт");
                 counterService.stopCounter();
                 writeToDB(tvPrice.getText().toString(), tvDistance.getText().toString());
+
+                DecimalFormat df = new DecimalFormat("0.00");
+
+                tvPrice.setText(df.format(calculatePrice(distance)) + " uah");
+
+
+                distance = 0;
+                price = 0;
+
                 break;
             case R.id.btnHistory:
-                intent = new Intent(this, HistoryActivity.class);
-                startActivity(intent);
+                if (!isProcessActive) {
+                    intent = new Intent(this, HistoryActivity.class);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(getApplicationContext(), "Недоступно во время поездки", Toast.LENGTH_SHORT).show();
+                }
                 break;
             case R.id.btnSettings:
-                intent = new Intent(this, SettingsActivity.class);
-                startActivity(intent);
+                if (!isProcessActive) {
+                    intent = new Intent(this, SettingsActivity.class);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(getApplicationContext(), "Недоступно во время поездки", Toast.LENGTH_SHORT).show();
+                }
+
                 break;
         }
     }
 
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+    }
 
     private ServiceConnection connection = new ServiceConnection() {
         @Override

@@ -22,6 +22,7 @@ public class CounterService extends Service implements LocationListener {
     private int notifyId = 1337;
     private boolean isProcessStarted;
     private boolean isFirstLocationFinded;
+    private boolean isPaused;
     private double latlon[] = new double[2];
     private final IBinder binder = new LocalBinder();
 
@@ -128,6 +129,10 @@ public class CounterService extends Service implements LocationListener {
 
         distance = locationA.distanceTo(locationB);
 
+        if (isPaused) {
+            distance = 0;
+        }
+
         Intent intent = null;
         intent = new Intent().putExtra(MainActivity.PARAM_STATUS_GPS, true);
         intent.putExtra(MainActivity.DISTANCE, distance);
@@ -164,11 +169,10 @@ public class CounterService extends Service implements LocationListener {
     }
 
     private Notification createNotification(String text) {
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
+//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
 
         Notification.Builder builder = new Notification.Builder(this);
-        //TODO сделать update для pause
-        builder.setSmallIcon(android.R.drawable.ic_media_play).setContentTitle("Taximeter").setContentText(text).setAutoCancel(true).setTicker(text).setContentIntent(pendingIntent);
+        builder.setSmallIcon(android.R.drawable.ic_media_play).setContentTitle("Taximeter").setContentText(text).setAutoCancel(true).setTicker(text);
 
         Notification notification = builder.getNotification();
         notification.flags = Notification.FLAG_ONGOING_EVENT;
@@ -183,11 +187,10 @@ public class CounterService extends Service implements LocationListener {
 
 
     public void startCounter() {
-        Toast.makeText(getApplicationContext(), "Start", Toast.LENGTH_SHORT).show();
         if (!isProcessStarted) {
             startForeground(notifyId, createNotification("Работает"));
             isProcessStarted = true;
-
+            isPaused = false;
         } else {
             updateNotification("Работает");
         }
@@ -195,16 +198,17 @@ public class CounterService extends Service implements LocationListener {
 
 
     public void pauseCounter() {
-        Toast.makeText(getApplicationContext(), "Pause", Toast.LENGTH_SHORT).show();
         updateNotification("В режиме ожидания");
+        isPaused = true;
+        isFirstLocationFinded = false;
+
     }
 
     public void stopCounter() {
-        Toast.makeText(getApplicationContext(), "Stop", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "Поездка завершена", Toast.LENGTH_SHORT).show();
         isProcessStarted = false;
+        isFirstLocationFinded = false;
         stopForeground(true);
-
-        stopUsingGps();
     }
 
 }
